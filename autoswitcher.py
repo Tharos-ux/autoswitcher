@@ -28,6 +28,7 @@ def callback(indata, outdata, frames, time, status, input, symbol, buffer):
     else:
         # remove stuff if above threshold
         buffering('decrease', volume_norm_in, input, buffer)
+        print(f"")
 
 
 def buffering(status: str, value: int, target: int, buffer: list):
@@ -47,19 +48,19 @@ def scene_caller(ws, delay, future_delay, requested_name, override: bool) -> tup
         ws.call(requests.SetCurrentScene(requested_name))
         delay = monotonic()
         if override:
-            future_delay = 2
+            future_delay = 3
         else:
             future_delay = choice([6, 8, 10])
     return delay, future_delay
 
 
-
 print(sd.query_devices())
 
-with open("creditentials.json",'r') as creds:
-    creditentials:dict = load(creds)
-    
-ws = obsws(creditentials["host"], creditentials["port"], creditentials["password"])
+with open("creditentials.json", 'r') as creds:
+    creditentials: dict = load(creds)
+
+ws = obsws(creditentials["host"],
+           creditentials["port"], creditentials["password"])
 
 
 delay, future_delay = monotonic(), 2
@@ -78,11 +79,15 @@ try:
         while(True):
             name = ws.call(requests.GetCurrentScene()).getName()
             if name in SUPPORTED_SCENES:
-                if max([sum(bf) for bf in BUFFERS]) > 10:
+                if max([sum(bf) for bf in BUFFERS]) > 20:
                     target = [sum(bf) for bf in BUFFERS].index(
                         max([sum(bf) for bf in BUFFERS]))
-                    delay, future_delay = scene_caller(
-                        ws, delay, future_delay, SCENE_SPEAKER[target], True)
+                    if name in SCENE_SPEAKER:
+                        delay, future_delay = scene_caller(
+                            ws, delay, future_delay, SCENE_SPEAKER[target], False)
+                    else:
+                        delay, future_delay = scene_caller(
+                            ws, delay, future_delay, SCENE_SPEAKER[target], True)
                 else:
                     delay, future_delay = scene_caller(
                         ws, delay, future_delay, choice(SCENE_FILL), False)
