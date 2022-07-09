@@ -1,4 +1,4 @@
-# autoswitcher
+# OBS Studio scene autoswitcher from sound level
 
 [![](https://img.shields.io/badge/Build-stable-green.svg)](https://github.com/Tharos-ux/autoswitcher/)
 [![](https://img.shields.io/badge/Interface-unfinished-red.svg)](https://github.com/Tharos-ux/autoswitcher/)
