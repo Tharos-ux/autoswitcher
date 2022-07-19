@@ -92,6 +92,11 @@ class Autoswitcher():
         return delay, future_delay
 
     def switch(self):
+        """Init switching between scenes. Setting self.RUNNING to false will disarm this.
+
+        Raises:
+            exc: catches error with OBS connexion or random interrupt
+        """
         self.RUNNING = True
         try:
             self.WS.connect()

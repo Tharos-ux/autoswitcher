@@ -7,7 +7,7 @@ dlist: list[int] = [i for i in range(3)]
 sspeak: list[str] = [f'Scene_Speaker_0{i}' for i in range(3)]
 sedito: list[str] = [f'Scene_Edito_0{i}' for i in range(3)]
 sfill: list[str] = [f'Scene_Fill_0{i}' for i in range(3)]
-creds: dict[str, str] = {'host': "", 'port': "", 'password': ""}
+creds: dict = {'host': "", 'port': 0, 'password': ""}
 tsh: int = 5
 
 # call for display of inputs and outputs
