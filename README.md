@@ -23,5 +23,6 @@ File should look like that :
 Dependencies listed in *requirements.txt*. You can install them with `pip install -r requirements.txt`.
 You may access to audio mapping information with `python autoswitcher.py -b` and start the program with `python autoswitcher.py` once you're done configuring.
 
+For more advanced prorammers, you may take a look to `autoswitcher_class.py` where you will find a Autoswitcher() object, ready to use. Autoswitcher().switch() will trigger scene switching!
 
-:warning: It will crash if OBS Studio and/or OBS websockets are not up and running !
+:warning: It will crash if OBS Studio and/or OBS websockets are not up and running!

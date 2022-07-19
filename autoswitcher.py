@@ -11,7 +11,6 @@ from argparse import ArgumentParser
 
 def callback(indata, outdata, frames, time, status, buffer: list) -> None:
     """Callback func to update buffers
-
     Args:
         buffer (list): target buffer
     """
@@ -26,7 +25,6 @@ def callback(indata, outdata, frames, time, status, buffer: list) -> None:
 
 def buffering(status: str, value: int, buffer: list) -> None:
     """Updates buffer status
-
     Args:
         status (str): increase or decrease instruction
         value (int): dB level to be write
@@ -45,14 +43,12 @@ def buffering(status: str, value: int, buffer: list) -> None:
 
 def scene_caller(ws: obsws, delay: int, future_delay: int, requested_name: str, override: bool) -> tuple:
     """Calls for a specific OBS Studio scene
-
     Args:
         ws (obsws): a connexion socket
         delay (int): current dealy
         future_delay (int): delay to match against
         requested_name (str): name of scene request
         override (bool): if time should be accounted
-
     Returns:
         tuple: delay informations
     """

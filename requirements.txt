@@ -1,3 +1,3 @@
 numpy
-obswebsocket
+obs-websocket-py
 sounddevice
