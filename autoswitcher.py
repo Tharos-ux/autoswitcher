@@ -7,15 +7,15 @@ from functools import partial
 from json import load
 from contextlib import ExitStack
 from argparse import ArgumentParser
-from html_writer import write_bubble,write_css
+from html_writer import write_bubble, write_css
 
 
-def callback(indata, outdata, frames, time, status, buffer: list) -> None:
+def callback(indata, outdata, frames, time, status, buffer: list, intcode: int) -> None:
     """Callback func to update buffers
     Args:
         buffer (list): target buffer
     """
-    volume_norm_in = int(linalg.norm(indata)*10)
+    volume_norm_in = int(linalg.norm(indata)*10)  # *NORMALISER[intcode]
     if volume_norm_in > THRESHOLD:
         # add stuff if above threshold
         buffering('increase', volume_norm_in, buffer)
@@ -60,7 +60,7 @@ def scene_caller(ws: obsws, delay: int, future_delay: int, requested_name: str, 
             future_delay = 3
         else:
             future_delay = choice([6, 8, 10])
-        write_bubble("Old_string","New_string",future_delay)
+        write_bubble("Old_string", "New_string", future_delay)
     return delay, future_delay
 
 
@@ -73,40 +73,47 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if (args.devices):
-        print(query_devices())
+        for device in query_devices():
+            print(device)
 
     else:
         write_css()
         # init mapping => you need to set names that are not ambiguous on your system !!!
-        ORATOR_DEVICES:list = [
-            ('Tharos','ALC293 Analog'),
-            ('Yoka','pulse'),
-            ('Invité_1','speexrate'),
-            ('Invité_2','upmix')
+        ORATOR_DEVICES: list = [
+            ('Tharos', 'Chat Mic'),
+            ('Yoka', 'VoiceMeeter Output'),
+            ('Invité_1', 'VoiceMeeter Aux Output'),
+            ('Invité_2', 'VoiceMeeter VAIO3 Output')
         ]
 
         # Forming mapping between devices and orators
-        assignator:dict = {}
+        assignator: dict = {}
         print("Starting mapping...")
-        for orator,target in ORATOR_DEVICES:
-            for i,device in enumerate(query_devices()):
-                if target in device['name']:
-                    print(f"   Orator {orator} has been assigned to device #{i}, namely {device['name']}!")
-                    if device['max_input_channels']==0:
-                        print(f"   /!\\ Beware, device {device['name']} does not have inputs. It may cause crashes.")
+        for orator, target in ORATOR_DEVICES:
+            for i, device in enumerate(query_devices()):
+                if target in device['name'] and orator not in assignator:
+                    print(
+                        f"   Orator {orator} has been assigned to device #{i}, namely {device['name']}!")
+                    if device['max_input_channels'] == 0:
+                        print(
+                            f"   /!\\ Beware, device {device['name']} does not have inputs. It may cause crashes.")
                     assignator[orator] = i
 
         # init memories
         THRESHOLD: int = 5
-        USERS: list[str] = [user for (user,_) in ORATOR_DEVICES]
+        USERS: list[str] = [user for (user, _) in ORATOR_DEVICES]
         DEVICES: list[tuple] = [(assignator[user], None) for user in USERS]
         BUFFERS: list[list] = [[] for _ in USERS]
 
         # init scenes to work with
-        SCENE_SPEAKER: list[str] = [f'Rolls_Solo_{user}' for user in USERS]     # list of solo fullscreen scenes
-        SCENE_EDITO: list[str] = [f'Rolls_Edito_{user}' for user in USERS]      # list of solo edito scenes
-        SCENE_FILL: list[str] = ['Rolls_Multicam']                              # list of scenes to use when no one's talking
-        SUPPORTED_SCENES: list[str] = SCENE_SPEAKER + SCENE_FILL                # list of scenes software is allowed to switch from
+        # list of solo fullscreen scenes
+        SCENE_SPEAKER: list[str] = [f'Rolls_Solo_{user}' for user in USERS]
+        # list of solo edito scenes
+        SCENE_EDITO: list[str] = [f'Rolls_Edito_{user}' for user in USERS]
+        # list of scenes to use when no one's talking
+        SCENE_FILL: list[str] = ['Rolls_Multicam']
+        # list of scenes software is allowed to switch from
+        SUPPORTED_SCENES: list[str] = SCENE_SPEAKER + SCENE_FILL
 
         # Loading creditentials for OBSwebsocket
         print("Loading creditentials...")
@@ -121,7 +128,7 @@ if __name__ == "__main__":
             print("Opening fluxes...")
             with ExitStack() as stream_stack:
                 streams = [stream_stack.enter_context(Stream(device=DEVICES[i], callback=partial(
-                    callback, buffer=BUFFERS[i]))) for i, _ in enumerate(USERS)]
+                    callback, buffer=BUFFERS[i], intcode=i))) for i, _ in enumerate(USERS)]
                 print("Starting main loop!")
                 while(True):
                     name = ws.call(requests.GetCurrentScene()).getName()
@@ -131,7 +138,7 @@ if __name__ == "__main__":
                                 max([len(bf) for bf in BUFFERS]))
                             if name in SCENE_SPEAKER:
                                 delay, future_delay = scene_caller(
-                                    ws, delay, future_delay, SCENE_SPEAKER[target], False)
+                                    ws, delay, future_delay, choice([SCENE_SPEAKER[target], SCENE_FILL[target]]), False)
                             else:
                                 delay, future_delay = scene_caller(
                                     ws, delay, future_delay, SCENE_SPEAKER[target], False)

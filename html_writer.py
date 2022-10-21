@@ -1,8 +1,9 @@
 from time import sleep
 from random import choice
 
-def write_bubble(text_of_old_bubble,text_for_new_bubble,time_to_wait_for_future):
-    htmlstring:str = f"""
+
+def write_bubble(text_of_old_bubble, text_for_new_bubble, time_to_wait_for_future):
+    htmlstring: str = f"""
         <!DOCTYPE html>
         <meta http-equiv="refresh" content="{time_to_wait_for_future}" >
         <html>
@@ -34,12 +35,12 @@ def write_bubble(text_of_old_bubble,text_for_new_bubble,time_to_wait_for_future)
 
         </html>
     """
-    with open('bubbles.html','w') as htmlwriter:
+    with open('bubbles.html', 'w') as htmlwriter:
         htmlwriter.write(htmlstring)
 
 
 def write_css():
-    css_string:str = """
+    css_string: str = """
     body { 
         background-color: transparent;
     }
@@ -130,14 +131,17 @@ def write_css():
     }
 
     """
-    with open("bubbles.css","w") as csswriter:
+    with open("bubbles.css", "w") as csswriter:
         csswriter.write(css_string)
 
-write_css()
-current_bubble = "Initial text!"
-while(True):
-    old_bubble = current_bubble
-    current_bubble = choice(['We switched to scene 1!','Oops, waited too long','Hey, something new!','Time to change view :)','Sorry, I took my time :(','Enjoy this new scene!'])
-    time_to_wait = choice([3,6,9])
-    write_bubble(old_bubble,current_bubble,time_to_wait)
-    sleep(time_to_wait)
+
+if __name__ == "__main__":
+    write_css()
+    current_bubble = "Initial text!"
+    while(True):
+        old_bubble = current_bubble
+        current_bubble = choice(['We switched to scene 1!', 'Oops, waited too long', 'Hey, something new!',
+                                'Time to change view :)', 'Sorry, I took my time :(', 'Enjoy this new scene!'])
+        time_to_wait = choice([3, 6, 9])
+        write_bubble(old_bubble, current_bubble, time_to_wait)
+        sleep(time_to_wait)
