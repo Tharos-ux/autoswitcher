@@ -60,16 +60,6 @@ def write_css():
     position: relative;
     }
 
-    .chat::before {
-    content: "";
-    position: absolute;
-    z-index: 1;
-    top: 0;
-    height: 40%;
-    width: 100%;
-    background: linear-gradient(to bottom, white 20%, rgba(255, 255, 255, 0)) repeat-x;
-    }
-
     .chat p {
     margin: 0;
     padding: 0;
