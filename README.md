@@ -26,3 +26,7 @@ You may access to audio mapping information with `python autoswitcher.py -b` and
 For more advanced prorammers, you may take a look to `autoswitcher_class.py` where you will find a Autoswitcher() object, ready to use. Autoswitcher().switch() will trigger scene switching!
 
 :warning: It will crash if OBS Studio and/or OBS websockets are not up and running!
+
+Future updates : 
+
+[ ] Willing to integrate something like https://codepen.io/alissarenz/pen/MvdEVg for chat bubbles
