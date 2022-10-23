@@ -84,7 +84,7 @@ def write_css():
     overflow: hidden;
     animation: message 0.15s ease-out 0s forwards;
     animation-delay: var(--delay);
-    --bgcolor: #d8d8d8;
+    --bgcolor: #ffbbce;
     --radius: 8px 8px 8px 0;
     }
 
@@ -93,16 +93,8 @@ def write_css():
     text-align: right;
     align-self: flex-end;
     transform-origin: 100% 100%;
-    --bgcolor: #d2ecd4;
+    --bgcolor: #ffbbce;
     --radius: 8px 8px 0 8px;
-    }
-
-    .chat__message::before {
-    content: "";
-    flex: 0 0 40px;
-    aspect-ratio: 1/1;
-    background: var(--bgcolor);
-    border-radius: 50%;
     }
 
     @keyframes message {

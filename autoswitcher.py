@@ -3,11 +3,23 @@ from sounddevice import sleep, query_devices, Stream
 from numpy import linalg
 from obswebsocket import obsws, requests
 from random import choice
-from functools import partial
+from functools import partial, wraps
 from json import load
 from contextlib import ExitStack
 from argparse import ArgumentParser
 from html_writer import write_bubble, write_css
+
+
+def called(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        if not wrapper.called:
+            wrapper.old_string = "Initialisation terminée !"
+            wrapper.new_string = "Initialisation terminée !"
+        wrapper.called = True
+        return func(*args, **kwargs)
+    wrapper.called = False
+    return wrapper
 
 
 def callback(indata, outdata, frames, time, status, buffer: list, intcode: int) -> None:
@@ -42,6 +54,7 @@ def buffering(status: str, value: int, buffer: list) -> None:
             buffer.remove(buffer[-1])
 
 
+@called
 def scene_caller(ws: obsws, delay: int, future_delay: int, requested_name: str, override: bool) -> tuple:
     """Calls for a specific OBS Studio scene
     Args:
@@ -54,13 +67,26 @@ def scene_caller(ws: obsws, delay: int, future_delay: int, requested_name: str, 
         tuple: delay informations
     """
     if monotonic() - delay > future_delay:
+        # print(ws.call(requests.GetCurrentScene().getName()))
+        #old_scene = ws.call(requests.GetCurrentScene())
         ws.call(requests.SetCurrentScene(requested_name))
         delay = monotonic()
         if override:
             future_delay = 3
         else:
             future_delay = choice([6, 8, 10])
-        write_bubble("Old_string", "New_string", future_delay)
+        # if old_scene != requested_name:
+        while scene_caller.new_string == scene_caller.old_string:
+            scene_caller.new_string = choice(
+                [
+                    "Ooops, trop long sur ce plan !",
+                    f"Attends, je switch vers {requested_name}",
+                    "Oooh, c'est super joli ici !",
+                    "Vous vouliez changer de vue ?"
+                ])
+        write_bubble(scene_caller.old_string,
+                     scene_caller.new_string, future_delay)
+        scene_caller.old_string = scene_caller.new_string
     return delay, future_delay
 
 
@@ -83,7 +109,7 @@ if __name__ == "__main__":
             ('Tharos', 'Chat Mic'),
             ('Yoka', 'VoiceMeeter Output'),
             ('Invité_1', 'VoiceMeeter Aux Output'),
-            ('Invité_2', 'VoiceMeeter VAIO3 Output')
+            #('Invité_2', 'VoiceMeeter VAIO3 Output')
         ]
 
         # Forming mapping between devices and orators
@@ -111,7 +137,8 @@ if __name__ == "__main__":
         # list of solo edito scenes
         SCENE_EDITO: list[str] = [f'Rolls_Edito_{user}' for user in USERS]
         # list of scenes to use when no one's talking
-        SCENE_FILL: list[str] = ['Rolls_Multicam']
+        SCENE_FILL: list[str] = [f'Rolls_Main_{user}' for user in USERS]
+        # SCENE_FILL: list[str] = ['Rolls_Multicam']
         # list of scenes software is allowed to switch from
         SUPPORTED_SCENES: list[str] = SCENE_SPEAKER + SCENE_FILL
 
