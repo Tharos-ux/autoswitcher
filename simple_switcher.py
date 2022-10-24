@@ -19,20 +19,17 @@ except:
 
 
 def switch(ws: obsws, requested_name: str) -> None:
-    print(f"Tried to call scene {requested_name}")
+    print(f"Call scene {requested_name}")
     ws.call(requests.SetCurrentScene(requested_name))
 
 
-scenes_switcher: list = [
-    "Discussion_Solo",
-    "Scène_Interview",
-    "Scène_Enregistrement"
-]
+scenes_switcher: list = [scene['name']
+                         for scene in ws.call(requests.GetSceneList()).getScenes()]
 
 layout: int = 160
 
 root = tk.Tk()
-root.geometry(f"{layout}x{(len(scenes_switcher)*layout)//2}")
+root.geometry(f"{layout}x{(len(scenes_switcher)*layout)//3}")
 root.title('Switcher')
 root.resizable(0, 0)
 tk.Grid.columnconfigure(root, 0, weight=1)
