@@ -67,26 +67,25 @@ def scene_caller(ws: obsws, delay: int, future_delay: int, requested_name: str, 
         tuple: delay informations
     """
     if monotonic() - delay > future_delay:
-        # print(ws.call(requests.GetCurrentScene().getName()))
-        #old_scene = ws.call(requests.GetCurrentScene())
+        old_scene = ws.call(requests.GetCurrentScene()).getName()
         ws.call(requests.SetCurrentScene(requested_name))
         delay = monotonic()
         if override:
             future_delay = 3
         else:
             future_delay = choice([6, 8, 10])
-        # if old_scene != requested_name:
-        while scene_caller.new_string == scene_caller.old_string:
-            scene_caller.new_string = choice(
-                [
-                    "Ooops, trop long sur ce plan !",
-                    f"Attends, je switch vers {requested_name}",
-                    "Oooh, c'est super joli ici !",
-                    "Vous vouliez changer de vue ?"
-                ])
-        write_bubble(scene_caller.old_string,
-                     scene_caller.new_string, future_delay)
-        scene_caller.old_string = scene_caller.new_string
+        if old_scene != requested_name:
+            while scene_caller.new_string == scene_caller.old_string:
+                scene_caller.new_string = choice(
+                    [
+                        "Ooops, trop long sur ce plan !",
+                        f"Attends, je switch vers {requested_name.split('_')[-1]}",
+                        "Oooh, c'est super joli ici !",
+                        "Vous vouliez changer de vue ?"
+                    ])
+            write_bubble(scene_caller.old_string,
+                         scene_caller.new_string, future_delay)
+            scene_caller.old_string = scene_caller.new_string
     return delay, future_delay
 
 
@@ -109,7 +108,7 @@ if __name__ == "__main__":
             ('Tharos', 'Chat Mic'),
             ('Yoka', 'VoiceMeeter Output'),
             ('Invité_1', 'VoiceMeeter Aux Output'),
-            #('Invité_2', 'VoiceMeeter VAIO3 Output')
+            # ('Invité_2', 'VoiceMeeter VAIO3 Output')
         ]
 
         # Forming mapping between devices and orators
