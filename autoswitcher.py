@@ -2,12 +2,13 @@ from time import monotonic
 from sounddevice import sleep, query_devices, Stream
 from numpy import linalg
 from obswebsocket import obsws, requests
-from random import choice
+from random import choice, random
 from functools import partial, wraps
 from json import load
 from contextlib import ExitStack
 from argparse import ArgumentParser
 from html_writer import write_bubble, write_css
+import os
 
 
 def called(func):
@@ -16,6 +17,7 @@ def called(func):
         if not wrapper.called:
             wrapper.old_string = "Initialisation terminée !"
             wrapper.new_string = "Initialisation terminée !"
+            wrapper.patounes_active = False
         wrapper.called = True
         return func(*args, **kwargs)
     wrapper.called = False
@@ -74,17 +76,29 @@ def scene_caller(ws: obsws, delay: int, future_delay: int, requested_name: str, 
             future_delay = 3
         else:
             future_delay = choice([6, 8, 10])
-        if old_scene != requested_name:
+        # calling for html writing only if Patounes is displayed
+        if scene_caller.patounes_active:
             while scene_caller.new_string == scene_caller.old_string:
-                scene_caller.new_string = choice(
-                    [
-                        "Ooops, trop long sur ce plan !",
-                        f"Attends, je switch vers {requested_name.split('_')[-1]}",
-                        "Oooh, c'est super joli ici !",
-                        "Vous vouliez changer de vue ?"
-                    ])
+                if old_scene != requested_name:
+                    scene_caller.new_string = choice(
+                        [
+                            "Oops, trop long sur ce plan !",
+                            f"Attends, je switch vers {requested_name.split('_')[-1]}",
+                            "Oooh, c'est super joli ici !",
+                            "Vous vouliez changer de vue ?",
+                            "On va voir d'autres têtes sympathiques !"
+                        ])
+                else:
+                    scene_caller.new_string = choice(
+                        [
+                            "On reste un peu sur ce plan ?",
+                            f"On reste un peu sur {requested_name.split('_')[-1]} ?",
+                            "C'est pas si mal, ici !",
+                            "Vous vouliez garder cette vue ?",
+                            "Ca parle longtemps, par ici !"
+                        ])
             write_bubble(scene_caller.old_string,
-                         scene_caller.new_string, future_delay)
+                         scene_caller.new_string, future_delay+0.5)
             scene_caller.old_string = scene_caller.new_string
     return delay, future_delay
 
@@ -140,23 +154,48 @@ if __name__ == "__main__":
         # SCENE_FILL: list[str] = ['Rolls_Multicam']
         # list of scenes software is allowed to switch from
         SUPPORTED_SCENES: list[str] = SCENE_SPEAKER + SCENE_FILL
+        # where Patounes websource is
+        NAME_OF_EMBED_SCENE: str = "--Patounes"
+        scene_caller.patounes_active = False
+        timer: int = 0
 
         # Loading creditentials for OBSwebsocket
         print("Loading creditentials...")
-        with open("creditentials.json", 'r') as creds:
+        with open(f"{os.path.dirname(__file__)}/creditentials.json", 'r') as creds:
             creditentials: dict = load(creds)
         ws = obsws(creditentials["host"],
                    creditentials["port"], creditentials["password"])
         delay, future_delay = monotonic(), 2
+        write_bubble("Initialisation terminée !",
+                     "Initialisation terminée !", future_delay)
         try:
             print("Connecting to OBS...")
             ws.connect()
+            for scene in SCENE_EDITO + SUPPORTED_SCENES:
+                ws.call(requests.SetSceneItemRender(
+                    scene_name=scene, source=NAME_OF_EMBED_SCENE, render=False))
             print("Opening fluxes...")
             with ExitStack() as stream_stack:
                 streams = [stream_stack.enter_context(Stream(device=DEVICES[i], callback=partial(
                     callback, buffer=BUFFERS[i], intcode=i))) for i, _ in enumerate(USERS)]
                 print("Starting main loop!")
                 while(True):
+                    # random condition to make Patounes appear
+                    if scene_caller.patounes_active == False and random() < 0.01 and timer > 18.0:
+                        timer = 0  # reset timer for showing/hiding
+                        scene_caller.patounes_active = True
+                        scene_caller.old_string = "Initialisation terminée !"
+                        scene_caller.new_string = "Initialisation terminée !"
+                        [ws.call(requests.SetSceneItemRender(
+                            scene_name=scene, source=NAME_OF_EMBED_SCENE, render=True)) for scene in SCENE_EDITO + SUPPORTED_SCENES]
+                    if scene_caller.patounes_active == True and random() < 0.02 and timer > 12.0:
+                        timer = 0  # reset timer for showing/hiding
+                        scene_caller.patounes_active = False
+                        [ws.call(requests.SetSceneItemRender(
+                            scene_name=scene, source=NAME_OF_EMBED_SCENE, render=False)) for scene in SCENE_EDITO + SUPPORTED_SCENES]
+                        write_bubble("Initialisation terminée !",
+                                     "Initialisation terminée !", future_delay)
+                    # main loop to switch scenes
                     name = ws.call(requests.GetCurrentScene()).getName()
                     if name in SUPPORTED_SCENES:
                         if max([len(bf) for bf in BUFFERS]) > 5:
@@ -177,6 +216,7 @@ if __name__ == "__main__":
                         delay, future_delay = scene_caller(
                             ws, delay, future_delay, SCENE_EDITO[target], True)
                         sleep(200)
+                        timer += 0.2
         except Exception as exc:
             raise exc
         finally:

@@ -1,8 +1,24 @@
 from time import sleep
 from random import choice
+import os
 
 
 def write_bubble(text_of_old_bubble, text_for_new_bubble, time_to_wait_for_future):
+    bottom_bubble = "" if text_for_new_bubble == "Initialisation terminée !" else f"""
+    <div class="chat__message chat__message_B" style="--delay: 0s;">
+                    <div class="chat__content">
+                        <p>{text_for_new_bubble}</p>
+                    </div>
+                </div>
+        """
+    top_bubble = "" if text_of_old_bubble == "Initialisation terminée !" else f"""
+    <div class="chat__message chat__message_B" style="--delay: -1s;">
+                    <div class="chat__content">
+                        <p>{text_of_old_bubble}</p>
+                    </div>
+                </div>
+        """
+
     htmlstring: str = f"""
         <!DOCTYPE html>
         <meta http-equiv="refresh" content="{time_to_wait_for_future}" >
@@ -16,17 +32,9 @@ def write_bubble(text_of_old_bubble, text_for_new_bubble, time_to_wait_for_futur
 
             <section class="chat">
 
-                <div class="chat__message chat__message_B" style="--delay: 0s;">
-                    <div class="chat__content">
-                        <p>{text_for_new_bubble}</p>
-                    </div>
-                </div>
+                {bottom_bubble}
 
-                <div class="chat__message chat__message_B" style="--delay: -1s;">
-                    <div class="chat__content">
-                        <p>{text_of_old_bubble}</p>
-                    </div>
-                </div>
+                {top_bubble}
 
 
             </section>
@@ -35,7 +43,7 @@ def write_bubble(text_of_old_bubble, text_for_new_bubble, time_to_wait_for_futur
 
         </html>
     """
-    with open('bubbles.html', 'w') as htmlwriter:
+    with open(f"{os.path.dirname(__file__)}/bubbles.html", 'w') as htmlwriter:
         htmlwriter.write(htmlstring)
 
 
@@ -113,7 +121,7 @@ def write_css():
     }
 
     """
-    with open("bubbles.css", "w") as csswriter:
+    with open(f"{os.path.dirname(__file__)}/bubbles.css", "w") as csswriter:
         csswriter.write(css_string)
 
 

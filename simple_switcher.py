@@ -3,10 +3,11 @@ from time import monotonic
 from obswebsocket import obsws, requests
 from functools import partial
 import tkinter as tk
+import os
 
 # Loading creditentials for OBSwebsocket
 print("Loading creditentials...")
-with open("creditentials.json", 'r') as creds:
+with open(f"{os.path.dirname(__file__)}/creditentials.json", 'r') as creds:
     creditentials: dict = load(creds)
 ws = obsws(creditentials["host"],
            creditentials["port"], creditentials["password"])
