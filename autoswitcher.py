@@ -79,6 +79,28 @@ def scene_caller(ws: obsws, delay: int, future_delay: int, requested_name: str, 
         # calling for html writing only if Patounes is displayed
         if scene_caller.patounes_active:
             while scene_caller.new_string == scene_caller.old_string:
+                match requested_name.split('_')[-1]:
+                    case 'Yoka':
+                        individual_quotes = [
+                            "Il devait pas écrire Ja'eel, lui ?",
+                            "Tueur de dragon... dans ses rêves !",
+                            "Ça sent le sel par ici non ?",
+                            "Pitié que quelqu'un lui coupe la parole"
+                        ]
+                    case 'Tharos':
+                        individual_quotes = [
+                            "Ouh, ça fait mal à la tête...",
+                            "J'avais tout compris, puis il m'a perdu !",
+                            "En tant que tel.",
+                            "Non, il ne parle pas de D&D"
+                        ]
+                    case _:
+                        individual_quotes = [
+                            "Radieux comme un zénith d'été !",
+                            "Maman ! Regarde ! Je passe à la télé !",
+                            "On reste un peu sur ce plan ?",
+                            "Où sont mes croquettes ?"
+                        ]
                 if old_scene != requested_name:
                     scene_caller.new_string = choice(
                         [
@@ -86,17 +108,24 @@ def scene_caller(ws: obsws, delay: int, future_delay: int, requested_name: str, 
                             f"Attends, je switch vers {requested_name.split('_')[-1]}",
                             "Oooh, c'est super joli ici !",
                             "Vous vouliez changer de vue ?",
-                            "On va voir d'autres têtes sympathiques !"
+                            "On va voir d'autres têtes sympathiques !",
+                            "Lancement d'un plan de domination du monde... demain",
+                            "Soyez attentifs, contrôle la prochaine fois !",
+                            "Lui, c'est mon humain préféré ! Il s'appelle comment déjà ?",
+                            "Quel sujet intéressant ! Mais je vois pas le rapport avec les chats ?"
                         ])
                 else:
                     scene_caller.new_string = choice(
                         [
-                            "On reste un peu sur ce plan ?",
                             f"On reste un peu sur {requested_name.split('_')[-1]} ?",
                             "C'est pas si mal, ici !",
                             "Vous vouliez garder cette vue ?",
-                            "Ca parle longtemps, par ici !"
-                        ])
+                            "Ca parle longtemps, par ici !",
+                            "01101101 01100101 01101111 01110111",
+                            "Quelqu'un a des questions ?",
+                            "<i>ronronne</i>",
+                            "Mon rêve est de devenir un véritable petit chat !"
+                        ] + individual_quotes)
             write_bubble(scene_caller.old_string,
                          scene_caller.new_string, future_delay+0.5)
             scene_caller.old_string = scene_caller.new_string
@@ -109,6 +138,8 @@ if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_argument(
         "-d", "--devices", help="Prints the list of available devices and exits", action='store_true')
+    parser.add_argument('creds', nargs='?', help="Optional path to creditentials",
+                        default=f"{os.path.dirname(__file__)}/creditentials.json")
     args = parser.parse_args()
 
     if (args.devices):
@@ -161,7 +192,7 @@ if __name__ == "__main__":
 
         # Loading creditentials for OBSwebsocket
         print("Loading creditentials...")
-        with open(f"{os.path.dirname(__file__)}/creditentials.json", 'r') as creds:
+        with open(args.creds, 'r') as creds:
             creditentials: dict = load(creds)
         ws = obsws(creditentials["host"],
                    creditentials["port"], creditentials["password"])
@@ -181,7 +212,7 @@ if __name__ == "__main__":
                 print("Starting main loop!")
                 while(True):
                     # random condition to make Patounes appear
-                    if scene_caller.patounes_active == False and random() < 0.01 and timer > 18.0:
+                    if scene_caller.patounes_active == False and random() < 0.01 and timer > 70.0:
                         timer = 0  # reset timer for showing/hiding
                         scene_caller.patounes_active = True
                         scene_caller.old_string = "Initialisation terminée !"

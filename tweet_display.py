@@ -1,5 +1,4 @@
-import os
-import requests as rq
+from requests import get
 from urllib.parse import urlencode
 import tkinter as tk
 from tkinter import ttk
@@ -7,6 +6,8 @@ from functools import partial
 from json import load
 from time import sleep
 from obswebsocket import obsws, requests
+from argparse import ArgumentParser
+from os import path
 
 SCENES_WHERE_SHOWING: list = ["Discussion_Solo",
                               "Presentation", "Dual", "Fullscreen"]
@@ -24,7 +25,7 @@ def get_embed(ws, url):
         query_string = urlencode({'url': url})
         oembed_url = f"https://publish.twitter.com/oembed?{query_string}&theme=dark&lang=fr&hideConversation=on"
 
-        r = rq.get(oembed_url)
+        r = get(oembed_url)
         if r.status_code == 200:
             result = r.json()
             html = result['html'].strip()
@@ -56,7 +57,7 @@ def get_embed(ws, url):
             </html>
         """
     # reload from cache
-    with open(f"{os.path.dirname(__file__)}/tweet_display.html", 'w', encoding='utf-8') as htmlwriter:
+    with open(f"{path.dirname(__file__)}/tweet_display.html", 'w', encoding='utf-8') as htmlwriter:
         htmlwriter.write(full_str)
     [ws.call(requests.SetSceneItemRender(
         scene_name=scene, source=NAME_OF_EMBED_SCENE, render=True)) for scene in SCENES_WHERE_SHOWING]
@@ -89,9 +90,13 @@ def get_embed(ws, url):
 
 
 if __name__ == "__main__":
+    parser = ArgumentParser()
+    parser.add_argument('creds', nargs='?', help="Optional path to creditentials",
+                        default=f"{path.dirname(__file__)}/creditentials.json")
+    args = parser.parse_args()
     # Loading creditentials for OBSwebsocket
     print("Loading creditentials...")
-    with open(f"{os.path.dirname(__file__)}/creditentials.json", 'r') as creds:
+    with open(args.creds, 'r') as creds:
         creditentials: dict = load(creds)
     ws = obsws(creditentials["host"],
                creditentials["port"], creditentials["password"])
