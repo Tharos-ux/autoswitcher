@@ -1,5 +1,5 @@
 from autoswitcher_class import Autoswitcher as ASW
-from souddevice import query_devices
+from sounddevice import query_devices
 
 # variables (configure those according to your needs)
 ulist: list[str] = [f'User_0{i}' for i in range(3)]
