@@ -8,6 +8,8 @@ from time import sleep
 from obswebsocket import obsws, requests
 from argparse import ArgumentParser
 from os import path
+from obswebsocket.exceptions import ConnectionFailure
+from websocket._exceptions import WebSocketConnectionClosedException
 
 SCENES_WHERE_SHOWING: list = ["Discussion_Solo",
                               "Presentation", "Dual", "Fullscreen", "Rolls_Solo_Tharos", "Rolls_Solo_Yoka", "Rolls_Solo_Invité_1", "Rolls_Solo_Invité_2", "Main_Pause_Rolls"]
@@ -103,21 +105,30 @@ if __name__ == "__main__":
     try:
         print("Connecting to OBS...")
         ws.connect()
-    except:
-        pass
 
-    layout: int = 160
-    root = tk.Tk()
-    root.geometry(f"{layout*4}x{layout//5}")
-    root.title('TwEmbed')
-    root.resizable(0, 0)
-    tk.Grid.rowconfigure(root, 0, weight=1)
-    tk.Grid.columnconfigure(root, 0, weight=1)
-    tk.Grid.columnconfigure(root, 1, weight=2)
-    name = tk.StringVar()
-    tb = ttk.Entry(root, width=15, textvariable=name)
-    tb.grid(sticky="nswe", column=1, row=0)
-    button_embed = tk.Button(master=root, text="Generate embed",
-                             bg='#2f3136', fg='white', command=partial(get_embed, ws=ws, url=name))
-    button_embed.grid(sticky="nswe", column=0, row=0)
-    root.mainloop()
+        layout: int = 160
+        root = tk.Tk()
+        root.geometry(f"{layout*4}x{layout//5}")
+        root.title('TwEmbed')
+        root.resizable(0, 0)
+        tk.Grid.rowconfigure(root, 0, weight=1)
+        tk.Grid.columnconfigure(root, 0, weight=1)
+        tk.Grid.columnconfigure(root, 1, weight=2)
+        name = tk.StringVar()
+        tb = ttk.Entry(root, width=15, textvariable=name)
+        tb.grid(sticky="nswe", column=1, row=0)
+        button_embed = tk.Button(master=root, text="Generate embed",
+                                 bg='#2f3136', fg='white', command=partial(get_embed, ws=ws, url=name))
+        button_embed.grid(sticky="nswe", column=0, row=0)
+        root.mainloop()
+
+    except KeyboardInterrupt:
+        ws.disconnect()
+        print("Connexion closed!")
+    except ConnectionFailure:
+        print(
+            "Could not connect to OBS ; please check creditentials file and if OBS is up and running.")
+    except WebSocketConnectionClosedException:
+        print("Connexion to OBS was prematurely closed ; aborting...")
+    except ConnectionRefusedError:
+        print("OBS refused connexion to the switcher.")

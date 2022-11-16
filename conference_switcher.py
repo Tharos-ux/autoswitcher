@@ -2,10 +2,11 @@ from os import path
 from argparse import ArgumentParser
 from json import load
 from time import monotonic
-from obswebsocket import obsws, requests, exceptions
+from obswebsocket import obsws, requests
+from obswebsocket.exceptions import ConnectionFailure
+from websocket._exceptions import WebSocketConnectionClosedException
 from random import random, choices
 from time import sleep
-
 
 if __name__ == "__main__":
     parser = ArgumentParser()
@@ -37,8 +38,8 @@ if __name__ == "__main__":
         while(True):
             if ws.call(requests.GetCurrentScene()).getName() in SCENE_SPEAK:
                 if random() < 0.08 and timer > 8.0:
-                    print(ws.call(requests.SetCurrentScene(
-                        choices(SCENE_SPEAK, weights=SCENE_PROBAS, k=1)[0])))
+                    ws.call(requests.SetCurrentScene(
+                        choices(SCENE_SPEAK, weights=SCENE_PROBAS, k=1)[0]))
                     timer = 0  # reset timer for scene switch
                 else:
                     sleep(UPDATE_INTERVAL)
@@ -49,7 +50,9 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         ws.disconnect()
         print("Connexion closed!")
-    except exceptions.ConnectionFailure:
+    except ConnectionFailure:
         print("Could not connect to OBS ; please check creditentials file and if OBS is up and running.")
-    finally:
-        ws.disconnect()
+    except WebSocketConnectionClosedException:
+        print("Connexion to OBS was prematurely closed ; aborting...")
+    except ConnectionRefusedError:
+        print("OBS refused connexion to the switcher.")

@@ -1,7 +1,7 @@
 from time import monotonic
 from sounddevice import sleep, query_devices, Stream
 from numpy import linalg
-from obswebsocket import obsws, requests, exceptions
+from obswebsocket import obsws, requests
 from random import choice, random
 from functools import partial, wraps
 from json import load
@@ -9,6 +9,8 @@ from contextlib import ExitStack
 from argparse import ArgumentParser
 from html_writer import write_bubble, write_css
 from os import path
+from obswebsocket.exceptions import ConnectionFailure
+from websocket._exceptions import WebSocketConnectionClosedException
 
 
 def called(func):
@@ -266,8 +268,10 @@ if __name__ == "__main__":
         except KeyboardInterrupt:
             ws.disconnect()
             print("Connexion closed!")
-        except exceptions.ConnectionFailure:
+        except ConnectionFailure:
             print(
                 "Could not connect to OBS ; please check creditentials file and if OBS is up and running.")
-        finally:
-            ws.disconnect()
+        except WebSocketConnectionClosedException:
+            print("Connexion to OBS was prematurely closed ; aborting...")
+        except ConnectionRefusedError:
+            print("OBS refused connexion to the switcher.")
