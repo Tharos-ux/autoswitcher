@@ -10,7 +10,7 @@ from argparse import ArgumentParser
 from os import path
 
 SCENES_WHERE_SHOWING: list = ["Discussion_Solo",
-                              "Presentation", "Dual", "Fullscreen"]
+                              "Presentation", "Dual", "Fullscreen", "Rolls_Solo_Tharos", "Rolls_Solo_Yoka", "Rolls_Solo_Invité_1", "Rolls_Solo_Invité_2", "Main_Pause_Rolls"]
 NAME_OF_EMBED_SCENE: str = "Embed"
 NAME_OF_BROWSER_SOURCE: str = "twitter_embed"
 X_IN_SCENE: int = 1580

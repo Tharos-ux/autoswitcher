@@ -1,14 +1,14 @@
 from time import monotonic
 from sounddevice import sleep, query_devices, Stream
 from numpy import linalg
-from obswebsocket import obsws, requests
+from obswebsocket import obsws, requests, exceptions
 from random import choice, random
 from functools import partial, wraps
 from json import load
 from contextlib import ExitStack
 from argparse import ArgumentParser
 from html_writer import write_bubble, write_css
-import os
+from os import path
 
 
 def called(func):
@@ -112,7 +112,10 @@ def scene_caller(ws: obsws, delay: int, future_delay: int, requested_name: str, 
                             "Lancement d'un plan de domination du monde... demain",
                             "Soyez attentifs, contrôle la prochaine fois !",
                             "Lui, c'est mon humain préféré ! Il s'appelle comment déjà ?",
-                            "Quel sujet intéressant ! Mais je vois pas le rapport avec les chats ?"
+                            "Quel sujet intéressant ! Mais je vois pas le rapport avec les chats ?",
+                            "42 ! Je le savais ! Euh ... C'était quoi la question déjà ?",
+                            "N'ETES VOUS PAS ASSEZ DIVERTIS !",
+                            "Rolistes ! Rassemblement !"
                         ])
                 else:
                     scene_caller.new_string = choice(
@@ -124,7 +127,19 @@ def scene_caller(ws: obsws, delay: int, future_delay: int, requested_name: str, 
                             "01101101 01100101 01101111 01110111",
                             "Quelqu'un a des questions ?",
                             "<i>ronronne</i>",
-                            "Mon rêve est de devenir un véritable petit chat !"
+                            "Mon rêve est de devenir un véritable petit chat !",
+                            "J'ai des articles de qualité ici <a href=https://utip.io/tharos/shop>utip.io/tharos</a>",
+                            "Vous êtes a couper le souffle !",
+                            "On va encore dépasser les horaires ...",
+                            "Et on oublie pas de follow !",
+                            "Rolls ! Egalement utilisable en mode ASMR !",
+                            "Ca va partir en débat ca ...",
+                            "Mais ! c'était pas dans le script !",
+                            "Par le pouvoir du dé ancestral ! Je suis un chat de combat ?",
+                            "Pourquoi un corbeau ressemble t-il à un bureau ?",
+                            "J'étais un chaventurier avant, mais j'ai pris une ligne de code dans le genou",
+                            "Nous, les Patounes, sommes des bots fiers",
+                            "Patounes ! Quel est votre métier ! Miaou ! Miaou !"
                         ] + individual_quotes)
             write_bubble(scene_caller.old_string,
                          scene_caller.new_string, future_delay+0.5)
@@ -139,7 +154,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "-d", "--devices", help="Prints the list of available devices and exits", action='store_true')
     parser.add_argument('creds', nargs='?', help="Optional path to creditentials",
-                        default=f"{os.path.dirname(__file__)}/creditentials.json")
+                        default=f"{path.dirname(__file__)}/creditentials.json")
     args = parser.parse_args()
 
     if (args.devices):
@@ -212,18 +227,18 @@ if __name__ == "__main__":
                 print("Starting main loop!")
                 while(True):
                     # random condition to make Patounes appear
-                    if scene_caller.patounes_active == False and random() < 0.01 and timer > 70.0:
+                    if scene_caller.patounes_active == False and random() < 0.03 and timer > 70.0:
                         timer = 0  # reset timer for showing/hiding
                         scene_caller.patounes_active = True
                         scene_caller.old_string = "Initialisation terminée !"
                         scene_caller.new_string = "Initialisation terminée !"
                         [ws.call(requests.SetSceneItemRender(
-                            scene_name=scene, source=NAME_OF_EMBED_SCENE, render=True)) for scene in SCENE_EDITO + SUPPORTED_SCENES]
-                    if scene_caller.patounes_active == True and random() < 0.02 and timer > 12.0:
+                            scene_name=scene, source=NAME_OF_EMBED_SCENE, render=True)) for scene in [*SCENE_EDITO, *SUPPORTED_SCENES]]
+                    if scene_caller.patounes_active == True and random() < 0.03 and timer > 14.0:
                         timer = 0  # reset timer for showing/hiding
                         scene_caller.patounes_active = False
                         [ws.call(requests.SetSceneItemRender(
-                            scene_name=scene, source=NAME_OF_EMBED_SCENE, render=False)) for scene in SCENE_EDITO + SUPPORTED_SCENES]
+                            scene_name=scene, source=NAME_OF_EMBED_SCENE, render=False)) for scene in [*SCENE_EDITO, *SUPPORTED_SCENES]]
                         write_bubble("Initialisation terminée !",
                                      "Initialisation terminée !", future_delay)
                     # main loop to switch scenes
@@ -248,7 +263,11 @@ if __name__ == "__main__":
                             ws, delay, future_delay, SCENE_EDITO[target], True)
                         sleep(200)
                         timer += 0.2
-        except Exception as exc:
-            raise exc
+        except KeyboardInterrupt:
+            ws.disconnect()
+            print("Connexion closed!")
+        except exceptions.ConnectionFailure:
+            print(
+                "Could not connect to OBS ; please check creditentials file and if OBS is up and running.")
         finally:
             ws.disconnect()
