@@ -18,7 +18,7 @@ if __name__ == "__main__":
     CHECK_INTERVAL: float = 3  # time before check if scene is in list
     # init scenes to work with
     # list of solo fullscreen scenes
-    SCENE_SPEAK: list[str] = ['Presentation', 'Dual']
+    SCENE_SPEAK: list[str] = ['Main_Tharos', 'Main_Byow']
     SCENE_PROBAS: list[int] = [66, 33]
 
     # Loading creditentials for OBSwebsocket

@@ -11,6 +11,7 @@ from html_writer import write_bubble, write_css
 from os import path
 from obswebsocket.exceptions import ConnectionFailure
 from websocket._exceptions import WebSocketConnectionClosedException
+import tkinter as tk
 
 
 def called(func):
@@ -170,8 +171,7 @@ if __name__ == "__main__":
             ('Tharos', 'Chat Mic'),
             ('Yoka', 'VoiceMeeter Output'),
             ('Invité_1', 'VoiceMeeter Aux Output'),
-            # ('Invité_2', 'VoiceMeeter VAIO3 Output'),
-            # ('Invité_3', 'CABLE Output (VB-Audio Virtual')
+            # ('Invité_2', 'VoiceMeeter VAIO3 Output')
         ]
 
         # Forming mapping between devices and orators
@@ -192,6 +192,7 @@ if __name__ == "__main__":
         USERS: list[str] = [user for (user, _) in ORATOR_DEVICES]
         DEVICES: list[tuple] = [(assignator[user], None) for user in USERS]
         BUFFERS: list[list] = [[] for _ in USERS]
+        NUM_ORATORS: list = [2, 3, 4]
 
         # init scenes to work with
         # list of solo fullscreen scenes
@@ -206,7 +207,19 @@ if __name__ == "__main__":
         # where Patounes websource is
         NAME_OF_EMBED_SCENE: str = "--Patounes"
         scene_caller.patounes_active = False
-        timer: int = 0
+        self.timer: int = 0
+
+        root = tk.Tk()
+        root.geometry(f"160x{(len(NUM_ORATORS)*160)//3}")
+        root.title('Autoswitcher')
+        root.resizable(0, 0)
+        tk.Grid.columnconfigure(root, 0, weight=1)
+        for i in range(len(NUM_ORATORS)):
+            tk.Grid.rowconfigure(root, i, weight=1)
+        button_list = [tk.Button(
+            master=root, text=f"{orator} orators", bg='#2f3136', fg='white', command=exit) for orator in NUM_ORATORS]
+        [button.grid(sticky="nswe", column=0, row=i)
+         for i, button in enumerate(button_list)]
 
         # Loading creditentials for OBSwebsocket
         print("Loading creditentials...")
@@ -228,44 +241,7 @@ if __name__ == "__main__":
                 streams = [stream_stack.enter_context(Stream(device=DEVICES[i], callback=partial(
                     callback, buffer=BUFFERS[i], intcode=i))) for i, _ in enumerate(USERS)]
                 print("Starting main loop!")
-                while(True):
-                    # random condition to make Patounes appear
-                    if scene_caller.patounes_active == False and random() < 0.03 and timer > 70.0:
-                        timer = 0  # reset timer for showing/hiding
-                        scene_caller.patounes_active = True
-                        scene_caller.old_string = "Initialisation terminée !"
-                        scene_caller.new_string = "Initialisation terminée !"
-                        [ws.call(requests.SetSceneItemRender(
-                            scene_name=scene, source=NAME_OF_EMBED_SCENE, render=True)) for scene in [*SCENE_EDITO, *SUPPORTED_SCENES]]
-                    if scene_caller.patounes_active == True and random() < 0.03 and timer > 14.0:
-                        timer = 0  # reset timer for showing/hiding
-                        scene_caller.patounes_active = False
-                        [ws.call(requests.SetSceneItemRender(
-                            scene_name=scene, source=NAME_OF_EMBED_SCENE, render=False)) for scene in [*SCENE_EDITO, *SUPPORTED_SCENES]]
-                        write_bubble("Initialisation terminée !",
-                                     "Initialisation terminée !", future_delay)
-                    # main loop to switch scenes
-                    name = ws.call(requests.GetCurrentScene()).getName()
-                    if name in SUPPORTED_SCENES:
-                        if max([len(bf) for bf in BUFFERS]) > 5:
-                            target = [len(bf) for bf in BUFFERS].index(
-                                max([len(bf) for bf in BUFFERS]))
-                            if name in SCENE_SPEAKER:
-                                delay, future_delay = scene_caller(
-                                    ws, delay, future_delay, choice([SCENE_SPEAKER[target], SCENE_FILL[target]]), False)
-                            else:
-                                delay, future_delay = scene_caller(
-                                    ws, delay, future_delay, SCENE_SPEAKER[target], False)
-                        else:
-                            delay, future_delay = scene_caller(
-                                ws, delay, future_delay, choice(SCENE_FILL), False)
-                    elif name in SCENE_EDITO:
-                        target = [sum(bf) for bf in BUFFERS].index(
-                            max([sum(bf) for bf in BUFFERS]))
-                        delay, future_delay = scene_caller(
-                            ws, delay, future_delay, SCENE_EDITO[target], True)
-                        sleep(200)
-                        timer += 0.2
+
         except KeyboardInterrupt:
             ws.disconnect()
             print("Connexion closed!")
@@ -276,3 +252,51 @@ if __name__ == "__main__":
             print("Connexion to OBS was prematurely closed ; aborting...")
         except ConnectionRefusedError:
             print("OBS refused connexion to the switcher.")
+
+
+class Autoswitcher:
+
+    def __init__(self) -> None:
+        self.timer = 0
+        self.patounes_active = False
+        self.old_string = ""
+        self.new_string = ""
+
+    def switch_loop(self):
+        # random condition to make Patounes appear
+        if self.patounes_active == False and random() < 0.03 and self.timer > 70.0:
+            self.timer = 0  # reset self.timer for showing/hiding
+            self.patounes_active = True
+            self.old_string = "Initialisation terminée !"
+            self.new_string = "Initialisation terminée !"
+            [ws.call(requests.SetSceneItemRender(
+                scene_name=scene, source=NAME_OF_EMBED_SCENE, render=True)) for scene in [*SCENE_EDITO, *SUPPORTED_SCENES]]
+        if self.patounes_active == True and random() < 0.03 and self.timer > 14.0:
+            self.timer = 0  # reset self.timer for showing/hiding
+            self.patounes_active = False
+            [ws.call(requests.SetSceneItemRender(
+                scene_name=scene, source=NAME_OF_EMBED_SCENE, render=False)) for scene in [*SCENE_EDITO, *SUPPORTED_SCENES]]
+            write_bubble("Initialisation terminée !",
+                         "Initialisation terminée !", future_delay)
+        # main loop to switch scenes
+        name = ws.call(requests.GetCurrentScene()).getName()
+        if name in SUPPORTED_SCENES:
+            if max([len(bf) for bf in BUFFERS]) > 5:
+                target = [len(bf) for bf in BUFFERS].index(
+                    max([len(bf) for bf in BUFFERS]))
+                if name in SCENE_SPEAKER:
+                    delay, future_delay = scene_caller(
+                        ws, delay, future_delay, choice([SCENE_SPEAKER[target], SCENE_FILL[target]]), False)
+                else:
+                    delay, future_delay = scene_caller(
+                        ws, delay, future_delay, SCENE_SPEAKER[target], False)
+            else:
+                delay, future_delay = scene_caller(
+                    ws, delay, future_delay, choice(SCENE_FILL), False)
+        elif name in SCENE_EDITO:
+            target = [sum(bf) for bf in BUFFERS].index(
+                max([sum(bf) for bf in BUFFERS]))
+            delay, future_delay = scene_caller(
+                ws, delay, future_delay, SCENE_EDITO[target], True)
+            self.timer += 0.2
+            self.after(200, self.switch_loop)
