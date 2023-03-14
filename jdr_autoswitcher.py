@@ -2,7 +2,7 @@ from time import monotonic
 from sounddevice import sleep, query_devices, Stream
 from numpy import linalg
 from obswebsocket import obsws, requests
-from random import choice, random
+from random import choice
 from functools import partial, wraps
 from json import load
 from contextlib import ExitStack
@@ -112,14 +112,12 @@ if __name__ == "__main__":
         # init scenes to work with
         # list of solo fullscreen scenes
         SCENE_SPEAKER: list[str] = [f'Cam_{user}' for user in USERS]
-        # list of solo edito scenes
-        #SCENE_EDITO: list[str] = [f'Rolls_Edito_{user}' for user in USERS]
+        # list of solo scenes with cam at bottom and overlay
+        SCENE_ALT: list[str] = [f'Cam_{user}' for user in USERS]
         # list of scenes to use when no one's talking
-        #SCENE_FILL: list[str] = [f'Rolls_Main_{user}' for user in USERS]
-        # SCENE_FILL: list[str] = ['Rolls_Multicam']
+        SCENE_FILL: list[str] = [f'Rolls_Main_{user}' for user in USERS]
         # list of scenes software is allowed to switch from
         SUPPORTED_SCENES: list[str] = SCENE_SPEAKER
-        # where Patounes websource is
         timer: int = 0
 
         # Loading creditentials for OBSwebsocket
@@ -144,8 +142,16 @@ if __name__ == "__main__":
                         if max([sum(bf) for bf in BUFFERS]) > 5:
                             target = [sum(bf) for bf in BUFFERS].index(
                                 max([sum(bf) for bf in BUFFERS]))
+                            if USERS[target] == 'MJ':
+                                delay, future_delay = scene_caller(
+                                    ws, delay, future_delay, choice(SCENE_SPEAKER[target], SCENE_ALT[target]), False)
+                            else:
+                                delay, future_delay = scene_caller(
+                                    ws, delay, future_delay, choice(SCENE_SPEAKER[target], SCENE_ALT[target]), False)
+                        else:
+                            # Nobody's talking
                             delay, future_delay = scene_caller(
-                                ws, delay, future_delay, SCENE_SPEAKER[target], False)
+                                ws, delay, future_delay, SCENE_FILL, False)
                         sleep(200)
                         timer += 0.2
         except KeyboardInterrupt:
