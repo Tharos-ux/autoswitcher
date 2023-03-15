@@ -82,6 +82,13 @@ def scene_caller(ws: obsws, delay: int, future_delay: int, requested_name: str, 
         if scene_caller.patounes_active:
             while scene_caller.new_string == scene_caller.old_string:
                 match requested_name.split('_')[-1]:
+                    case 'Solyg':
+                        individual_quotes = [
+                            "J'ai pas compris le système !",
+                            "I'm already Zoldar !",
+                            "Gare au one-shot !",
+                            "Par les Chat-pitres, je vous bénis !"
+                        ]
                     case 'Yoka':
                         individual_quotes = [
                             "Il devait pas écrire Ja'eel, lui ?",
@@ -130,7 +137,7 @@ def scene_caller(ws: obsws, delay: int, future_delay: int, requested_name: str, 
                             "Quelqu'un a des questions ?",
                             "<i>ronronne</i>",
                             "Mon rêve est de devenir un véritable petit chat !",
-                            "J'ai des articles de qualité ici <a href=https://utip.io/tharos/shop>utip.io/tharos</a>",
+                            "J'ai des articles de qualité ici ! utip.io/tharos",
                             "Vous êtes a couper le souffle !",
                             "On va encore dépasser les horaires ...",
                             "Et on oublie pas de follow !",
@@ -228,7 +235,7 @@ if __name__ == "__main__":
                 streams = [stream_stack.enter_context(Stream(device=DEVICES[i], callback=partial(
                     callback, buffer=BUFFERS[i], intcode=i))) for i, _ in enumerate(USERS)]
                 print("Starting main loop!")
-                while(True):
+                while (True):
                     # random condition to make Patounes appear
                     if scene_caller.patounes_active == False and random() < 0.03 and timer > 70.0:
                         timer = 0  # reset timer for showing/hiding

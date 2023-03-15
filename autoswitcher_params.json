@@ -1,0 +1,13 @@
+{
+    "mapping": [
+        [
+            "Tharos",
+            "Chat Mic"
+        ],
+        [
+            "Solyg",
+            "VoiceMeeter Output"
+        ]
+    ],
+    "threshold": 5
+}
