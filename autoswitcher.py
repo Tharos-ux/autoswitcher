@@ -9,8 +9,12 @@ from contextlib import ExitStack
 from argparse import ArgumentParser
 from html_writer import write_bubble, write_css
 from os import path
+from rich.traceback import install
 from obswebsocket.exceptions import ConnectionFailure
 from websocket._exceptions import WebSocketConnectionClosedException
+
+
+install(show_locals=True)
 
 
 def called(func):
@@ -31,7 +35,7 @@ def callback(indata, outdata, frames, time, status, buffer: list, intcode: int) 
     Args:
         buffer (list): target buffer
     """
-    volume_norm_in = int(linalg.norm(indata)*10)  # *NORMALISER[intcode]
+    volume_norm_in = int(linalg.norm(indata)*25)  # *NORMALISER[intcode]
     if volume_norm_in > THRESHOLD:
         # add stuff if above threshold
         buffering('increase', volume_norm_in, buffer)
@@ -71,8 +75,9 @@ def scene_caller(ws: obsws, delay: int, future_delay: int, requested_name: str, 
         tuple: delay informations
     """
     if monotonic() - delay > future_delay:
-        old_scene = ws.call(requests.GetCurrentScene()).getName()
-        ws.call(requests.SetCurrentScene(requested_name))
+        old_scene = ws.call(requests.GetCurrentProgramScene()
+                            ).currentProgramSceneName()
+        ws.call(requests.SetCurrentProgramScene(sceneName=requested_name))
         delay = monotonic()
         if override:
             future_delay = 3
@@ -175,10 +180,8 @@ if __name__ == "__main__":
         # init mapping => you need to set names that are not ambiguous on your system !!!
         ORATOR_DEVICES: list = [
             ('Tharos', 'Chat Mic'),
-            ('Yoka', 'VoiceMeeter Output'),
-            ('Invité_1', 'VoiceMeeter Aux Output'),
-            # ('Invité_2', 'VoiceMeeter VAIO3 Output'),
-            # ('Invité_3', 'CABLE Output (VB-Audio Virtual')
+            ('Solyg', 'CABLE-A Output'),
+            ('Invité_1', 'CABLE-B Output'),
         ]
 
         # Forming mapping between devices and orators
@@ -207,7 +210,7 @@ if __name__ == "__main__":
         SCENE_EDITO: list[str] = [f'Rolls_Edito_{user}' for user in USERS]
         # list of scenes to use when no one's talking
         SCENE_FILL: list[str] = [f'Rolls_Main_{user}' for user in USERS]
-        # SCENE_FILL: list[str] = ['Rolls_Multicam']
+        # SCENE_FILL: list[str] = ['Rolls_Multicam_Duo']
         # list of scenes software is allowed to switch from
         SUPPORTED_SCENES: list[str] = SCENE_SPEAKER + SCENE_FILL
         # where Patounes websource is
@@ -259,7 +262,7 @@ if __name__ == "__main__":
                                 max([len(bf) for bf in BUFFERS]))
                             if name in SCENE_SPEAKER:
                                 delay, future_delay = scene_caller(
-                                    ws, delay, future_delay, choice([SCENE_SPEAKER[target], SCENE_FILL[target]]), False)
+                                    ws, delay, future_delay, choice([SCENE_SPEAKER[target], SCENE_FILL[0]]), False)
                             else:
                                 delay, future_delay = scene_caller(
                                     ws, delay, future_delay, SCENE_SPEAKER[target], False)
@@ -271,8 +274,8 @@ if __name__ == "__main__":
                             max([sum(bf) for bf in BUFFERS]))
                         delay, future_delay = scene_caller(
                             ws, delay, future_delay, SCENE_EDITO[target], True)
-                        sleep(200)
                         timer += 0.2
+                    sleep(200)
         except KeyboardInterrupt:
             ws.disconnect()
             print("Connexion closed!")

@@ -2,7 +2,7 @@ from time import monotonic
 from sounddevice import sleep, query_devices, Stream
 from numpy import linalg
 from obswebsocket import obsws, requests
-from random import choice
+from random import choices, choice
 from functools import partial, wraps
 from json import load
 from contextlib import ExitStack
@@ -17,7 +17,7 @@ def callback(indata, outdata, frames, time, status, buffer: list, intcode: int, 
     Args:
         buffer (list): target buffer
     """
-    volume_norm_in = int(linalg.norm(indata)*10)  # *NORMALISER[intcode]
+    volume_norm_in = int(linalg.norm(indata)*50)  # *NORMALISER[intcode]
     if volume_norm_in > THRESHOLD:
         # add stuff if above threshold
         buffering('increase', volume_norm_in, buffer, ratio)
@@ -56,7 +56,7 @@ def scene_caller(ws: obsws, delay: int, future_delay: int, requested_name: str, 
         tuple: delay informations
     """
     if monotonic() - delay > future_delay:
-        ws.call(requests.SetCurrentScene(requested_name))
+        ws.call(requests.SetCurrentProgramScene(sceneName=requested_name))
         delay = monotonic()
         if override:
             future_delay = 3
@@ -71,6 +71,8 @@ if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_argument(
         "-d", "--devices", help="Prints the list of available devices and exits", action='store_true')
+    parser.add_argument('-n', '--number', help="Number of orators in vocal",
+                        default=5, type=int)
     parser.add_argument('creds', nargs='?', help="Optional path to creditentials",
                         default=f"{path.dirname(__file__)}/creditentials.json")
     args = parser.parse_args()
@@ -83,11 +85,15 @@ if __name__ == "__main__":
         # init mapping => you need to set names that are not ambiguous on your system !!!
         ORATOR_DEVICES: list = [
             ('MJ', 'Chat Mic', 3),
-            ('Joueur1', 'VoiceMeeter Output', 1),
-            ('Joueur2', 'VoiceMeeter Aux Output', 1),
-            ('Joueur3', 'VoiceMeeter VAIO3 Output', 1),
-            ('Joueur4', 'CABLE Output (VB-Audio Virtual', 1)
+            ('Joueur1', 'CABLE-A Output', 6),
+            ('Joueur2', 'CABLE-B Output', 1),
+            ('Joueur3', 'CABLE-C Output', 1),
+            ('Joueur4', 'CABLE-D Output', 1),
+            ('Joueur5', 'CABLE Output', 1)
         ]
+        n_orators: int = args.number if args.number > 0 and args.number < len(
+            ORATOR_DEVICES) else len(ORATOR_DEVICES)
+        ORATOR_DEVICES = ORATOR_DEVICES[:n_orators]
 
         # Forming mapping between devices and orators
         assignator: dict = {}
@@ -111,13 +117,21 @@ if __name__ == "__main__":
 
         # init scenes to work with
         # list of solo fullscreen scenes
-        SCENE_SPEAKER: list[str] = [f'Cam_{user}' for user in USERS]
+        SCENE_SPEAKER: list[str] = [f'JdR_Solo_{user}' for user in USERS]
         # list of solo scenes with cam at bottom and overlay
-        SCENE_ALT: list[str] = [f'Cam_{user}' for user in USERS]
+        SCENE_ALT: list[str] = [f'JdR_Cam_{user}' for user in USERS]
         # list of scenes to use when no one's talking
-        SCENE_FILL: list[str] = [f'Rolls_Main_{user}' for user in USERS]
+        SCENE_FILL: list[str] = {
+            1: [f'JdR_Solo_{USERS[0]}'],
+            2: ['JdR_Duo'],
+            3: ['JdR_Trio'],
+            4: ['JdR_Quatuor'],
+            5: ['JdR_Multicam'],
+            6: ['JdR_Multicam'],
+        }[len(USERS)]
+        print(f"   Using {', '.join(SCENE_FILL)} as filler scenes")
         # list of scenes software is allowed to switch from
-        SUPPORTED_SCENES: list[str] = SCENE_SPEAKER
+        SUPPORTED_SCENES: list[str] = SCENE_SPEAKER + SCENE_ALT + SCENE_FILL
         timer: int = 0
 
         # Loading creditentials for OBSwebsocket
@@ -135,19 +149,17 @@ if __name__ == "__main__":
                 streams = [stream_stack.enter_context(Stream(device=DEVICES[i], callback=partial(
                     callback, buffer=BUFFERS[i], intcode=i, ratio=RATIOS[i]))) for i, _ in enumerate(USERS)]
                 print("Starting main loop!")
-                while(True):
+                while (True):
+                    # print(BUFFERS)
                     # main loop to switch scenes
-                    name = ws.call(requests.GetCurrentScene()).getName()
+                    name = ws.call(requests.GetCurrentProgramScene()
+                                   ).getcurrentProgramSceneName()
                     if name in SUPPORTED_SCENES:
                         if max([sum(bf) for bf in BUFFERS]) > 5:
                             target = [sum(bf) for bf in BUFFERS].index(
                                 max([sum(bf) for bf in BUFFERS]))
-                            if USERS[target] == 'MJ':
-                                delay, future_delay = scene_caller(
-                                    ws, delay, future_delay, choice(SCENE_SPEAKER[target], SCENE_ALT[target]), False)
-                            else:
-                                delay, future_delay = scene_caller(
-                                    ws, delay, future_delay, choice(SCENE_SPEAKER[target], SCENE_ALT[target]), False)
+                            delay, future_delay = scene_caller(
+                                ws, delay, future_delay, choices([SCENE_SPEAKER[target], SCENE_ALT[target], choice(SCENE_FILL)], weights=[0.6, 0.15, 0.25])[0], False)
                         else:
                             # Nobody's talking
                             delay, future_delay = scene_caller(
